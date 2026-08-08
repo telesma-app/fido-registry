@@ -4,9 +4,9 @@
 [![Go](https://github.com/telesma-app/fido-registry/actions/workflows/go.yml/badge.svg)](https://github.com/telesma-app/fido-registry/actions/workflows/go.yml)
 
 `telesma-app/fido-registry` provides dependency-free Go types for the complete
-numeric values, case-sensitive names, bit masks, and Metadata Statement
-combination rules in the authenticator-characteristics sections of FIDO
-Registry of Predefined Values 2.3.
+numeric values, case-sensitive names, bit masks, COSE authentication profiles,
+and Metadata Statement combination rules in the authenticator-characteristics
+sections of FIDO Registry of Predefined Values 2.3.
 
 > [!WARNING]
 > This module is under active development. Its public API may change during
@@ -38,6 +38,17 @@ if !ok {
 }
 algorithmName, _ := algorithm.Name()
 
+profile, ok := algorithm.COSEProfile()
+if !ok {
+	return errors.New("authentication algorithm has no COSE key profile")
+}
+
+ed448Profile, ok := registry.LookupCOSEAuthenticationProfile(-8, 1, 7)
+if !ok {
+	return errors.New("unregistered COSE key profile")
+}
+ed448Algorithms, _ := ed448Profile.AuthenticationAlgorithms()
+
 protection, ok := registry.ParseKeyProtections([]string{"hardware", "tee"})
 if !ok {
 	return errors.New("unregistered or duplicate key protection")
@@ -47,7 +58,15 @@ if !protection.ValidMetadata() {
 }
 protectionNames, _ := protection.Names()
 
-fmt.Printf("algorithm=%#x (%s), key protection=%#x (%v)\n", algorithm, algorithmName, protection, protectionNames)
+fmt.Printf(
+	"algorithm=%#x (%s), COSE=%+v, Ed448 algorithms=%v, key protection=%#x (%v)\n",
+	algorithm,
+	algorithmName,
+	profile,
+	ed448Algorithms,
+	protection,
+	protectionNames,
+)
 ```
 
 Numeric registry types expose `Parse…`, `Name`, and `Registered` for exact
@@ -57,6 +76,12 @@ masks, `Registered` and `Names` accept every combination of known bits,
 including zero; `ValidMetadata` applies the relevant nonempty, `MUST`, and
 exclusivity rules. Registry `SHOULD` pairings remain policy decisions for
 callers.
+
+Authentication algorithms with a Registry-defined COSE key representation
+also expose `COSEProfile`. Reverse lookup uses the complete `(alg, kty, crv)`
+tuple, so the shared EdDSA algorithm identifier `-8` resolves Ed25519 and Ed448
+without ambiguity. A COSE profile can correspond to both raw and DER Registry
+signature encodings; `AuthenticationAlgorithms` returns every such value.
 
 ## Testing
 
