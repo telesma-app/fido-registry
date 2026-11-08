@@ -9,8 +9,9 @@ and Metadata Statement combination rules in the authenticator-characteristics
 sections of FIDO Registry of Predefined Values 2.3.
 
 > [!WARNING]
-> This module is under active development. Its public API may change during
-> `v0.x`.
+> This module is under active development. Its public API may change during `v0.x`.
+
+## Features
 
 The root `registry` package represents every value in sections 3.1 through 3.7
 of the
@@ -27,47 +28,35 @@ go get github.com/telesma-app/fido-registry@latest
 
 See [`go.mod`](go.mod) for the required Go version.
 
-## Usage
+## Quick start
 
 ```go
-import registry "github.com/telesma-app/fido-registry"
+package main
 
-algorithm, ok := registry.ParseAuthenticationAlgorithm("secp256r1_ecdsa_sha256_raw")
-if !ok {
-	return errors.New("unregistered authentication algorithm")
-}
-algorithmName, _ := algorithm.Name()
+import (
+	"fmt"
+	"log"
 
-profile, ok := algorithm.COSEProfile()
-if !ok {
-	return errors.New("authentication algorithm has no COSE key profile")
-}
-
-ed448Profile, ok := registry.LookupCOSEAuthenticationProfile(-8, 1, 7)
-if !ok {
-	return errors.New("unregistered COSE key profile")
-}
-ed448Algorithms, _ := ed448Profile.AuthenticationAlgorithms()
-
-protection, ok := registry.ParseKeyProtections([]string{"hardware", "tee"})
-if !ok {
-	return errors.New("unregistered or duplicate key protection")
-}
-if !protection.ValidMetadata() {
-	return errors.New("invalid Metadata Statement key-protection combination")
-}
-protectionNames, _ := protection.Names()
-
-fmt.Printf(
-	"algorithm=%#x (%s), COSE=%+v, Ed448 algorithms=%v, key protection=%#x (%v)\n",
-	algorithm,
-	algorithmName,
-	profile,
-	ed448Algorithms,
-	protection,
-	protectionNames,
+	registry "github.com/telesma-app/fido-registry"
 )
+
+func main() {
+	algorithm, ok := registry.ParseAuthenticationAlgorithm("secp256r1_ecdsa_sha256_raw")
+	if !ok {
+		log.Fatal("unregistered authentication algorithm")
+	}
+
+	name, _ := algorithm.Name()
+	profile, ok := algorithm.COSEProfile()
+	if !ok {
+		log.Fatal("authentication algorithm has no COSE key profile")
+	}
+
+	fmt.Printf("algorithm=%#x name=%s COSE=%+v\n", algorithm, name, profile)
+}
 ```
+
+## Registry values and metadata
 
 Numeric registry types expose `Parse…`, `Name`, and `Registered` for exact
 bidirectional mapping. Plural bit-mask parsers reject unknown names and
@@ -83,13 +72,13 @@ tuple, so the shared EdDSA algorithm identifier `-8` resolves Ed25519 and Ed448
 without ambiguity. A COSE profile can correspond to both raw and DER Registry
 signature encodings; `AuthenticationAlgorithms` returns every such value.
 
-## Testing
+## Development
 
 ```sh
-go test ./...
-go vet ./...
+GOWORK=off go test ./...
+GOWORK=off go vet ./...
 ```
 
 ## License
 
-Apache License 2.0. See [`LICENSE`](LICENSE).
+[Apache License 2.0](LICENSE).
