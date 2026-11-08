@@ -1,21 +1,22 @@
-### Go template
-# Binaries for programs and plugins
+# Go build and test artifacts
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-
-# Test binaries and coverage output
 *.test
 *.out
+_obj/
 
-# Go workspace files
+# Local Go workspaces
 go.work
 go.work.sum
 
-# Environment files
+# Local environment
 .env
 
-# GoLand
+# IDE files
 .idea/
+
+# macOS metadata
+.DS_Store
